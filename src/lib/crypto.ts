@@ -227,3 +227,34 @@ export function passwordStrengthLabel(entropy: number): {
   if (entropy < 80) return { label: "Good", color: "bg-emerald-500", pct: 78 };
   return { label: "Strong", color: "bg-emerald-600", pct: 100 };
 }
+
+// ── Master-password policy ───────────────────────────────────────────────────
+/**
+ * Hard requirements for the master password. Because the master password is the
+ * ONLY thing protecting your notes (zero-knowledge — there is no recovery), we
+ * refuse to set a weak one. Every rule must pass before a vault can be created.
+ */
+export interface PasswordRule {
+  label: string;
+  ok: boolean;
+}
+
+export const MASTER_PASSWORD_MIN_LENGTH = 16;
+
+export function checkMasterPassword(password: string): PasswordRule[] {
+  return [
+    {
+      label: `At least ${MASTER_PASSWORD_MIN_LENGTH} characters`,
+      ok: password.length >= MASTER_PASSWORD_MIN_LENGTH,
+    },
+    { label: "A lowercase letter (a–z)", ok: /[a-z]/.test(password) },
+    { label: "An uppercase letter (A–Z)", ok: /[A-Z]/.test(password) },
+    { label: "A number (0–9)", ok: /[0-9]/.test(password) },
+    { label: "A symbol (!@#$…)", ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+}
+
+/** True only when the master password satisfies every rule. */
+export function masterPasswordMeetsPolicy(password: string): boolean {
+  return checkMasterPassword(password).every((r) => r.ok);
+}

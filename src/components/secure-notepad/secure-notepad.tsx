@@ -17,7 +17,7 @@ export function SecureNotepad() {
   }, [init]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+    <div className="h-screen flex flex-col bg-background relative overflow-hidden">
       {/* Ambient dot-matrix (sits behind everything) */}
       <div className="pointer-events-none fixed inset-0 dot-bg dot-bg-fade opacity-50" />
       {status === "loading" && <LoadingScreen />}

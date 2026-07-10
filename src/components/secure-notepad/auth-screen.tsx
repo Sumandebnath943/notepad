@@ -14,9 +14,16 @@ import {
   Cpu,
   Binary,
   ShieldCheck,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { estimatePasswordEntropy, passwordStrengthLabel } from "@/lib/crypto";
+import {
+  estimatePasswordEntropy,
+  passwordStrengthLabel,
+  checkMasterPassword,
+  masterPasswordMeetsPolicy,
+} from "@/lib/crypto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +57,16 @@ export function AuthScreen() {
   const passwordsMatch =
     masterPassword.length > 0 && masterPassword === confirmMaster;
 
+  // Hard master-password policy (all rules must pass to create a vault).
+  const pwRules = checkMasterPassword(masterPassword);
+  const pwPolicyOk = masterPasswordMeetsPolicy(masterPassword);
+  const signupReady =
+    email.length > 0 &&
+    loginPassword.length >= 8 &&
+    pwPolicyOk &&
+    passwordsMatch &&
+    loginPassword !== masterPassword;
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -65,16 +82,10 @@ export function AuthScreen() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (masterPassword.length < 10) {
-      toast.error("Master password must be at least 10 characters.");
-      return;
-    }
-    // Password strength is the real weak point in a zero-knowledge model, so
-    // gate on estimated entropy (not just length) before generating keys.
-    if (entropy < 60) {
-      toast.error(
-        "Master password is too weak. Add length or a mix of character types."
-      );
+    // The master password is the ONLY thing protecting the notes and cannot be
+    // recovered, so enforce the full policy before generating any keys.
+    if (!pwPolicyOk) {
+      toast.error("Master password doesn't meet all the requirements yet.");
       return;
     }
     if (!passwordsMatch) {
@@ -106,10 +117,10 @@ export function AuthScreen() {
   }
 
   return (
-    <div className="flex-1 flex flex-col relative z-10">
+    <div className="flex-1 flex flex-col relative z-10 min-h-0">
       <div className="flex-1 grid lg:grid-cols-2 min-h-0">
         {/* ── Left: brand hero ─────────────────────────────────────────── */}
-        <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden border-r border-white/5">
+        <div className="relative hidden lg:flex flex-col justify-between gap-6 p-10 overflow-hidden border-r border-white/5">
           {/* ambient glows */}
           <div
             className="absolute inset-0 -z-10"
@@ -126,12 +137,12 @@ export function AuthScreen() {
           </div>
 
           {/* center hero */}
-          <div className="relative space-y-7 max-w-xl">
+          <div className="relative space-y-5 max-w-xl">
             <div className="chip chip-lime w-fit">
               <span className="h-1.5 w-1.5 rounded-full bg-lime-400 anim-pulse-glow" />
               End-to-end encrypted
             </div>
-            <h1 className="text-[2.75rem] font-bold leading-[1.05] tracking-tight">
+            <h1 className="text-[2.5rem] font-bold leading-[1.05] tracking-tight">
               Encrypted notes,
               <br />
               <span className="text-gradient-brand">invisible by design.</span>
@@ -140,7 +151,7 @@ export function AuthScreen() {
               A zero-knowledge vault. Your master key is derived in your browser
               and never transmitted — not even we can read your notes.
             </p>
-            <ul className="space-y-3.5">
+            <ul className="space-y-3">
               <Feature icon={<Cpu className="h-4 w-4" />} title="Argon2id key derivation" sub="64 MB · 3 iterations" />
               <Feature icon={<Binary className="h-4 w-4" />} title="AES-256-GCM authenticated encryption" sub="tamper-evident ciphertext" />
               <Feature icon={<Fingerprint className="h-4 w-4" />} title="Envelope encryption" sub="rotate your password without re-encrypting notes" />
@@ -157,7 +168,7 @@ export function AuthScreen() {
         </div>
 
         {/* ── Right: auth form ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-center p-6 sm:p-10 relative">
+        <div className="flex flex-col items-center p-6 sm:p-10 relative overflow-y-auto min-h-0">
           <div
             className="absolute inset-0 -z-10"
             style={{
@@ -169,7 +180,7 @@ export function AuthScreen() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="w-full max-w-md"
+            className="w-full max-w-md my-auto"
           >
             {/* Mobile logo: mark stacked above wordmark */}
             <div className="lg:hidden flex flex-col items-center gap-3 mb-7">
@@ -307,6 +318,25 @@ export function AuthScreen() {
                         />
                       </Field>
 
+                      {/* Hard requirements — vault can't be created until all pass. */}
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 pt-0.5">
+                        {pwRules.map((r) => (
+                          <li
+                            key={r.label}
+                            className={`flex items-center gap-1.5 text-[11px] transition-colors ${
+                              r.ok ? "text-lime-300" : "text-muted-foreground"
+                            }`}
+                          >
+                            {r.ok ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                            ) : (
+                              <Circle className="h-3.5 w-3.5 shrink-0 opacity-40" />
+                            )}
+                            {r.label}
+                          </li>
+                        ))}
+                      </ul>
+
                       {masterPassword.length > 0 && (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
@@ -354,7 +384,7 @@ export function AuthScreen() {
                       <Button
                         type="submit"
                         className="w-full btn-brand border-0 h-10"
-                        disabled={busy}
+                        disabled={busy || !signupReady}
                       >
                         {busy ? (
                           <>
