@@ -29,7 +29,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  // Supabase Auth + Postgres (and realtime) are reached directly from the
+  // browser. Only ciphertext / wrapped key material is ever sent there.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

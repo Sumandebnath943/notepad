@@ -34,11 +34,6 @@ yarn-error.log*
 .env*
 !.env.example
 
-# local SQLite database (may contain real user data — never commit)
-/db/*.db
-/db/*.db-journal
-/db/*.db-wal
-
 # vercel
 .vercel
 
