@@ -29,9 +29,11 @@ DEK encrypts each note  →  AES-256-GCM, unique nonce per note        (Supabase
   is separate from the *master* password (which derives the encryption key and
   never touches the server).
 - **Isolation by Row-Level Security:** every query runs as the logged-in user
-  (`auth.uid()`); the RLS policies expose only that user's own rows. The
-  browser uses only the public anon key — secrecy of the key is not what
-  protects data.
+  (`auth.uid()`); the RLS policies expose only that user's own rows.
+- **Server-mediated auth:** the browser never talks to Supabase directly. It
+  calls same-origin Next.js Route Handlers, which hold the Supabase session in
+  an **httpOnly cookie** (unreadable by page scripts) and talk to Supabase
+  server-side. Even a successful XSS cannot exfiltrate the session token.
 - **Primitives only, no custom crypto:** Argon2id (64 MB / 3 iterations) for key
   derivation, AES-256-GCM for authenticated encryption, CSPRNG for randomness.
 - **Password rotation** re-wraps the DEK only — notes are never re-encrypted.
@@ -72,7 +74,7 @@ needs it.
 
 ### 5. Install & run
 ```bash
-bun install      # installs @supabase/supabase-js and drops the old Prisma deps
+bun install      # installs @supabase/ssr + supabase-js, drops the old Prisma deps
 bun run dev      # http://localhost:3000
 ```
 
@@ -90,17 +92,14 @@ environment. A `Caddyfile` is included for reverse-proxying the standalone serve
 - Server enforces a minimum Argon2id strength (64 MB / 3 iters) at the client;
   see `lib/crypto.ts`.
 - Signup gates on estimated password **entropy**, not just length.
-- Strict security headers: CSP (with `connect-src` scoped to Supabase), HSTS,
+- Auth session kept in an **httpOnly cookie** via `@supabase/ssr`; all Supabase
+  access is server-side, so page scripts never see the session token.
+- Strict security headers: CSP (`connect-src 'self'`), HSTS,
   `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and
   `X-Frame-Options: SAMEORIGIN` (clickjacking protection on by default).
-- Auth session tokens are managed by Supabase.
 
 ### Known limitations / next steps
 
-- Supabase stores the auth session in the browser (localStorage by default). A
-  successful XSS could steal that *session token* (not your notes — the DEK is
-  never stored). The CSP is the primary mitigation; for stronger protection
-  migrate to `@supabase/ssr` with httpOnly cookies.
 - CSP still allows `'unsafe-inline'` for scripts (Next.js needs it without a
   nonce setup). For maximum XSS hardening, migrate to a per-request nonce CSP.
 - `typescript.ignoreBuildErrors` is `true` in `next.config.ts` — flip to `false`

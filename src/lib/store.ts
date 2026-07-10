@@ -12,12 +12,7 @@
  */
 
 import { create } from "zustand";
-import {
-  api,
-  type KeyMaterialDto,
-  type NoteDto,
-  type UserDto,
-} from "@/lib/supabase-data";
+import { api, type KeyMaterialDto, type NoteDto, type UserDto } from "@/lib/api";
 import {
   ARGON2_MEM_COST,
   ARGON2_TIME_COST,
