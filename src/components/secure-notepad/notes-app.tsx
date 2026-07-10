@@ -383,7 +383,7 @@ export function NotesApp() {
                 className="flex-1 flex flex-col min-h-0 relative"
               >
                 <div className="flex-1 overflow-y-auto custom-scroll">
-                  <div className="max-w-3xl mx-auto px-5 sm:px-8 py-6 sm:py-10">
+                  <div className="max-w-5xl mx-auto px-6 sm:px-12 lg:px-16 py-8 sm:py-10">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="chip chip-lime">
                         <Lock className="h-2.5 w-2.5" />
@@ -427,7 +427,7 @@ export function NotesApp() {
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
       >
-        <AlertDialogContent className="glass-strong border-white/10">
+        <AlertDialogContent className="glass-solid border-white/10">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this note?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -554,7 +554,7 @@ function SettingsDialog({
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-strong border-white/10">
+      <DialogContent className="glass-solid border-white/10">
         <DialogHeader>
           <DialogTitle>Security settings</DialogTitle>
           <DialogDescription>

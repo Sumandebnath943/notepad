@@ -177,6 +177,13 @@
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.09);
 }
+/* Near-opaque surface for modals/dialogs so page content doesn't bleed through. */
+.glass-solid {
+  background: rgba(10, 15, 20, 0.985);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
 
 /* Glows */
 .glow-lime { box-shadow: var(--glow-lime); }
